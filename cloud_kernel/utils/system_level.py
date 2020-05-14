@@ -11,9 +11,9 @@ extended_path = [
     "/usr/local/bin",
 ]
 
+
 def is_kafka_installed():
     for path in extended_path:
         if os.path.exists('kafka-server-start.sh'):
             return True
         return False
-    

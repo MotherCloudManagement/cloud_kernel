@@ -1,7 +1,12 @@
 from apscheduler.schedulers.background import BackgroundScheduler
 from apscheduler.executors.pool import ThreadPoolExecutor, ProcessPoolExecutor
-from environment import platform_environment
-from utils.callables import FetchCallables
+from apscheduler.jobstores.memory import MemoryJobStore
+from apscheduler.jobstores.zookeeper import ZooKeeperJobStore
+from cloud_kernel.schedule.environment import platform_environment
+from cloud_kernel.schedule.callables import FetchStaticTriggers
+from cloud_kernel.trigger.trigger_aws import *
+from pytz import utc
+
 
 class CloudKernelSingleton(object):
     """
@@ -17,18 +22,28 @@ class CloudKernelSingleton(object):
     """
     def __init__(self, *args, **kwargs):
         self.ck_scheduler = BackgroundScheduler()
-        self.executer = ThreadPoolExecutor
+        self.executer = {
+            'default': ThreadPoolExecutor(5)
+        }
+        self.jobstores = {
+            'default': MemoryJobStore()
+            # 'zookeeper': ZooKeeperJobStore()
+        }
+        self.job_defaults = {
+            'coalesce': False,
+            'max_instances': 3
+        }
 
         (cpu, kafka) = platform_environment()
         if kafka:
             # not sure what I want to do with this yet, I'm hoping to use kafka
             # as a storage alternative for memory
             pass
-        if cpu >= 4:
-            self.executer = ProcessPoolExecutor
+        # if cpu >= 4:
+        #     self.executer = ProcessPoolExecutor(5)
 
         self.ck_scheduler = BackgroundScheduler(
-            jobstores=self.jobstores, executors=self.executer, job_defaults=job_defaults,
+            jobstores=self.jobstores, executors=self.executer, job_defaults=self.job_defaults,
             timezone=utc
         )
 
@@ -42,8 +57,8 @@ class CloudKernelSingleton(object):
         return inner_wrapper
 
 
-@CloudKernelSingleton
-class CloudKernelSchedule(object):
+# @CloudKernelSingleton()
+class CloudKernelSchedule(CloudKernelSingleton):
     """
         - ImmutableJobs are the SDK Level Callables that will be loaded
         everytime the program starts.  These will retrieve data from existing
@@ -58,8 +73,11 @@ class CloudKernelSchedule(object):
         data that it will return, and the associated provider.
     """
 
-    @classmethod
-    def ImmutableJobs(self, interval_value=1, interval_multiplier=1.75):
+    def __init__(self):
+        super(CloudKernelSchedule, self).__init__(self)
+
+    # @classmethod
+    def ImmutableJobs(self, interval_value=.50, interval_multiplier=1):
         """
         Fetch an immutables list of callables and add them to the scheduler as
         Jobs.  Each pass through in the loop will use the interval and multiplier
@@ -68,18 +86,21 @@ class CloudKernelSchedule(object):
         """
         interval = interval_value
         multiplier = interval_multiplier
-        ImmutableJobList = FetchCallables()
+        # ImmutableJobList = FetchCallables()
+        ImmutableJobList = FetchStaticTriggers.FetchCallables()
 
         print("Queing Jobs in Scheduler...")
         for job in ImmutableJobList:
+            print("Current Interval Value: {}".format((interval + multiplier/2)))
             self.ck_scheduler.add_job(
                 job,
                 'interval',
                 minutes=interval * multiplier
             )
-            interval = interval * multiplier
+            interval = interval + multiplier
 
         print("Jobs Queued for Execution")
         print("{}".format(self.ck_scheduler.print_jobs()))
 
-## TODO: Add event listener, option for kafka, etc.
+# TODO: Add event listener, option for kafka, etc.
+
