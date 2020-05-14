@@ -1,4 +1,5 @@
 class GetVsphereHosts(object):
 
     def __init__(self):
-        self.name = 'host.1'
+        self.name = 'vsphere_host.1'
+        print(self.name)

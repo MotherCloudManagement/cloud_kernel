@@ -1,4 +1,5 @@
 class GetVultrHosts(object):
 
     def __init__(self):
-        self.name = 'host.1'
+        self.name = 'vultr_host.1'
+        print(self.name)

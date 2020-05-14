@@ -1,6 +1,7 @@
 from apscheduler.schedulers.background import BackgroundScheduler
 from apscheduler.executors.pool import ThreadPoolExecutor, ProcessPoolExecutor
 from apscheduler.jobstores.memory import MemoryJobStore
+from apscheduler.events import *
 from apscheduler.jobstores.zookeeper import ZooKeeperJobStore
 from cloud_kernel.schedule.environment import platform_environment
 from cloud_kernel.schedule.callables import FetchStaticTriggers
@@ -50,7 +51,7 @@ class CloudKernelSingleton(object):
     def __call__(self, function):
         def inner_wrapper(*args, **kwargs):
 
-            self.ck_scheduler.start()
+            # self.ck_scheduler.start()
 
             status = function(*args, **kwargs)
             return status
@@ -75,7 +76,7 @@ class CloudKernelSchedule(CloudKernelSingleton):
     def __init__(self):
         super(CloudKernelSchedule, self).__init__(self)
 
-    def ImmutableJobs(self, interval_value=.50, interval_multiplier=1):
+    def ImmutableJobs(self, interval_value=1, interval_multiplier=.1):
         """
         Fetch an immutables list of callables and add them to the scheduler as
         Jobs.  Each pass through in the loop will use the interval and multiplier
@@ -87,15 +88,18 @@ class CloudKernelSchedule(CloudKernelSingleton):
         ImmutableJobList = FetchStaticTriggers.FetchCallables()
 
         print("Queing Immutable Jobs in the cloud_kernel Scheduler...")
+        self.ck_scheduler.add_listener(self.MonitorEvent, EVENT_JOB_EXECUTED | EVENT_JOB_ERROR)
+
         for job in ImmutableJobList:
-            print("Current Interval Value: {}".format((interval + multiplier/2)))
+            # print("Current Interval Value: {}".format((interval + multiplier/2)))
             self.ck_scheduler.add_job(
                 job,
                 'interval',
-                minutes=interval * multiplier
+                minutes=interval + multiplier
             )
             interval = interval + multiplier
 
+        print('Adding Listener')
         print("Jobs Queued for Execution")
         print("{}".format(self.ck_scheduler.print_jobs()))
 
@@ -135,11 +139,14 @@ class CloudKernelSchedule(CloudKernelSingleton):
         print("Successfully Attached a New Listener to the Schduler!")
         print("Listener -> {}".format(listener))
 
-    def MonitorEvent(self):
+    def MonitorEvent(self, event):
         """
         Monitor a jobs events to know if the scheduler needs to make adjustments,
         i.e. pause or resume the job.
         """
-        pass
+        if event.exception:
+            print('Event Failed')
+        else:
+            print('Event Succeeded')
 
-# TODO: Add event listener, option for kafka, etc.
+# TODO: Add event listener, option for kafka, Executer to run job callables

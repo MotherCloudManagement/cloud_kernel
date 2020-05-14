@@ -1,4 +1,5 @@
 class GetXenHosts(object):
 
     def __init__(self):
-        self.name = 'host.1'
+        self.name = 'xenhosts_host.1'
+        print(self.name)

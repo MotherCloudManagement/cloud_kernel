@@ -1,4 +1,5 @@
 class GetSoftLayerHosts(object):
 
     def __init__(self):
-        self.name = 'host.1'
+        self.name = 'softlayer.1'
+        print(self.name)
