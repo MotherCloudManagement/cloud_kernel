@@ -57,7 +57,6 @@ class CloudKernelSingleton(object):
         return inner_wrapper
 
 
-# @CloudKernelSingleton()
 class CloudKernelSchedule(CloudKernelSingleton):
     """
         - ImmutableJobs are the SDK Level Callables that will be loaded
@@ -76,7 +75,6 @@ class CloudKernelSchedule(CloudKernelSingleton):
     def __init__(self):
         super(CloudKernelSchedule, self).__init__(self)
 
-    # @classmethod
     def ImmutableJobs(self, interval_value=.50, interval_multiplier=1):
         """
         Fetch an immutables list of callables and add them to the scheduler as
@@ -86,10 +84,9 @@ class CloudKernelSchedule(CloudKernelSingleton):
         """
         interval = interval_value
         multiplier = interval_multiplier
-        # ImmutableJobList = FetchCallables()
         ImmutableJobList = FetchStaticTriggers.FetchCallables()
 
-        print("Queing Jobs in Scheduler...")
+        print("Queing Immutable Jobs in the cloud_kernel Scheduler...")
         for job in ImmutableJobList:
             print("Current Interval Value: {}".format((interval + multiplier/2)))
             self.ck_scheduler.add_job(
@@ -102,5 +99,47 @@ class CloudKernelSchedule(CloudKernelSingleton):
         print("Jobs Queued for Execution")
         print("{}".format(self.ck_scheduler.print_jobs()))
 
-# TODO: Add event listener, option for kafka, etc.
+    def MutableJobs(self, interval_value=.35, interval_multiplier=1):
+        """
+        Fetch an Mutable list of callables and add them to the scheduler as
+        Jobs.  These jobs are invoked upon the submission from the end user.
+        """
 
+        interval = interval_value
+        multiplier = interval_multiplier
+        # ImmutableJobList = FetchCallables()
+        ImmutableJobList = FetchStaticTriggers.FetchCallables()
+
+        print('Queueing Mutable Jobs in the cloud_kernel Scheduler...')
+        # read from kafka queue, which also means they've been stored in a consumer!
+
+    def EventListener(self, listener=None, *constants):
+        print('Attempting a new Listener Attachement to the Scheduler')
+        if (listener is None) or (len(constants) == 0):
+            print('Cannot register Event Listener, Must provide a listener and valid constant(s)!')
+            return
+
+        job_status = {}
+
+        for constant in constants:
+            job_status['CONSTANT_{}'.format(
+                constant
+            )] = constant
+
+        self.ck_scheduler.add_listener(
+            listener,
+            int("{} | {}".format(job_status[0], job_status[1])) \
+                if len(job_status) == 2 else int("{}".format(job_status[0]))
+        )
+
+        print("Successfully Attached a New Listener to the Schduler!")
+        print("Listener -> {}".format(listener))
+
+    def MonitorEvent(self):
+        """
+        Monitor a jobs events to know if the scheduler needs to make adjustments,
+        i.e. pause or resume the job.
+        """
+        pass
+
+# TODO: Add event listener, option for kafka, etc.
