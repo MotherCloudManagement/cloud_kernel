@@ -5,20 +5,45 @@ from collections.abc import Mapping
 import ast
 
 
-class KafaJobManager(object):
+class CloudKafkaBase(object):
 
-    """
-    This class will manage all Apache Kafka related functions.  If there is an issue with
-    queueing or reading data from an existing queue, or any difficulty surfaces that could
-    lead to degraded performance, this class should send instructions to pause jobs and later
-    resume them.
+    def __init__(self):
+        """
+        This class will manage all Apache Kafka related functions.  If there is an issue with
+        queueing or reading data from an existing queue, or any difficulty surfaces that could
+        lead to degraded performance, this class should send instructions to pause jobs and later
+        resume them.
+
+        """
+        self.message_tracker = ''
+        self.broker_server, self.consumer_topic, self.producer_topic, self.consumergroup = kafka_broker()
+        self.consumer = KafkaConsumer(
+            self.consumer_topic,
+            group_id=self.consumergroup,
+            bootstrap_servers=[self.broker_server]
+        )
+        self.c = KafkaConsumer()
+        self.producer = ''
+        try:
+            self.producer = KafkaProducer(
+                bootstrap_servers=[self.broker_server],
+                retries=5
+            )
+        except Exception:
+            raise ReferenceError('Unable to properly load settings of Kafka Broker, Consumer, or Producer')
 
 
-    """
-    pass
+class CloudKafkaContainer(CloudKafkaBase):
+
+    def __call__(cls, *args, **kwargs):
+        pass
+
+    def __init__(self):
+        super(CloudKafkaContainer, self).__init__()
 
 
-class CloudKafkaProduce(object):
+class CloudKafkaProduce(CloudKafkaContainer):
+
     """
     The reason for specificity here is that the various cloud proivders and local onpremise platforms
     may return 'data' with different formats.
@@ -28,13 +53,7 @@ class CloudKafkaProduce(object):
 
     """
     def __init__(self):
-        try:
-            self.broker_server, self.producer_topic = kafka_broker()
-            self.producer = KafkaProducer(bootstrap_servers=[self.broker_server], retries=5)
-        except Exception:
-            raise ReferenceError('Unable to properly load settings of Kafka Broker, Consumer, or Producer')
-
-        self.message_tracker = ''
+        super(CloudKafkaProduce, self).__init__()
 
     def ProduceMessage(self, topic, data):
         # Reformatt the data to create a valid Mapping
@@ -56,6 +75,17 @@ class CloudKafkaProduce(object):
                     self.ProduceFailure, pair={key, value}
                 )
 
+                self.producer.flush()
+
+                try:
+                    self.message_tracker.future.get(timeout=10)
+                except KafkaError:
+                    print("Not sure what to do yet with"+\
+                          " Failed Messages.  For now, just print!")
+                    self.ProduceFailure(topic, key)
+
+                self.ProduceSuccess(topic, key)
+
             print('Producer disconnected from Broker, This may not be a problem! ')
             print('The connections are designed to be short-lived!')
 
@@ -63,15 +93,13 @@ class CloudKafkaProduce(object):
         print('Successfully Produced Topic: {}'.format(topic))
         print('Successfully Produced Key: {}'.format(key))
 
-    def ProduceFailure(self, topic, pair={}):
+    def ProduceFailure(self, topic, key):
         print('Failed to Produce topic {} to Broker'.format(topic))
-        print('Failed par')
+        print('Failed part'.format(key))
 
 
-class CloudKafkaConsume():
-    pass
+class CloudKafkaConsume(CloudKafkaContainer):
 
-
-
-
+    def __init__(self):
+        super(CloudKafkaConsume, self).__init__()
 

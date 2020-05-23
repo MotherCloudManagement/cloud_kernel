@@ -5,6 +5,7 @@ from apscheduler.events import *
 from apscheduler.jobstores.zookeeper import ZooKeeperJobStore
 from cloud_kernel.schedule.environment import platform_environment
 from cloud_kernel.schedule.callables import FetchStaticTriggers
+from cloud_kernel.schedule.persistant import CloudKafkaConsume
 from cloud_kernel.trigger.trigger_aws import *
 from pytz import utc
 
@@ -75,6 +76,16 @@ class CloudKernelSchedule(CloudKernelSingleton):
 
     def __init__(self):
         super(CloudKernelSchedule, self).__init__(self)
+        self.ck_scheduler.add_listener(self.MonitorEvent, EVENT_JOB_EXECUTED | EVENT_JOB_ERROR)
+        self.ck_scheduler.add_listener(
+            self.MonitorEvent,
+            EVENT_SCHEDULER_STARTED | EVENT_SCHEDULER_SHUTDOWN | EVENT_SCHEDULER_PAUSED | EVENT_SCHEDULER_RESUMED
+        )
+        # uncomment the listener below if apsheduler is ever upgraded to include the EVENT_ALL
+        # self.ck_scheduler.add_listener(
+        #     self.MonitorEvent,
+        #     EVENT_ALL
+        # )
 
     def ImmutableJobs(self, interval_value=1, interval_multiplier=.1):
         """
@@ -88,14 +99,13 @@ class CloudKernelSchedule(CloudKernelSingleton):
         ImmutableJobList = FetchStaticTriggers.FetchCallables()
 
         print("Queing Immutable Jobs in the cloud_kernel Scheduler...")
-        self.ck_scheduler.add_listener(self.MonitorEvent, EVENT_JOB_EXECUTED | EVENT_JOB_ERROR)
 
         for job in ImmutableJobList:
             # print("Current Interval Value: {}".format((interval + multiplier/2)))
             self.ck_scheduler.add_job(
                 job,
                 'interval',
-                minutes=interval + multiplier
+                seconds=interval + multiplier
             )
             interval = interval + multiplier
 
@@ -111,42 +121,24 @@ class CloudKernelSchedule(CloudKernelSingleton):
 
         interval = interval_value
         multiplier = interval_multiplier
-        # ImmutableJobList = FetchCallables()
         ImmutableJobList = FetchStaticTriggers.FetchCallables()
 
         print('Queueing Mutable Jobs in the cloud_kernel Scheduler...')
         # read from kafka queue, which also means they've been stored in a consumer!
-
-    def EventListener(self, listener=None, *constants):
-        print('Attempting a new Listener Attachement to the Scheduler')
-        if (listener is None) or (len(constants) == 0):
-            print('Cannot register Event Listener, Must provide a listener and valid constant(s)!')
-            return
-
-        job_status = {}
-
-        for constant in constants:
-            job_status['CONSTANT_{}'.format(
-                constant
-            )] = constant
-
-        self.ck_scheduler.add_listener(
-            listener,
-            int("{} | {}".format(job_status[0], job_status[1])) \
-                if len(job_status) == 2 else int("{}".format(job_status[0]))
-        )
-
-        print("Successfully Attached a New Listener to the Schduler!")
-        print("Listener -> {}".format(listener))
 
     def MonitorEvent(self, event):
         """
         Monitor a jobs events to know if the scheduler needs to make adjustments,
         i.e. pause or resume the job.
         """
-        if event.exception:
-            print('Event Failed')
-        else:
-            print('Event Succeeded')
+        if not isinstance(event, SchedulerEvent):
+            if event.exception:
+                print('Failed to execute Job {}, receiving {}'.format(event.job_id, event.exception))
+                print('{}'.format(event.traceback))
+            else:
+                print('Event {} Succeeded in Jobstore {}'.format(event.job_id, event.jobstore))
+        if isinstance(event, SchedulerEvent):
+            print("Scheduler Event Received using code: {}".format(event.code))
+
 
 # TODO: Add event listener, option for kafka, Executer to run job callables
