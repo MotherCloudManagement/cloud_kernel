@@ -2,9 +2,10 @@ from apscheduler.schedulers.background import BackgroundScheduler
 from apscheduler.executors.pool import ThreadPoolExecutor, ProcessPoolExecutor
 from apscheduler.jobstores.memory import MemoryJobStore
 from apscheduler.events import *
-from apscheduler.jobstores.zookeeper import ZooKeeperJobStore
+from apscheduler.jobstores.sqlalchemy import SQLAlchemyJobStore
 from cloud_kernel.schedule.environment import platform_environment
 from cloud_kernel.schedule.callables import FetchStaticTriggers
+from cloud_kernel.db import CLOUD_KERNEL_ENGINE_STRING
 from cloud_kernel.schedule.persistant import CloudKafkaConsume
 from cloud_kernel.trigger.trigger_aws import *
 from pytz import utc
@@ -28,8 +29,8 @@ class CloudKernelSingleton(object):
             'default': ThreadPoolExecutor(5)
         }
         self.jobstores = {
-            'default': MemoryJobStore()
-            # 'zookeeper': ZooKeeperJobStore()
+            'default': MemoryJobStore(),
+            'sqlalchemy': SQLAlchemyJobStore(url=CLOUD_KERNEL_ENGINE_STRING)
         }
         self.job_defaults = {
             'coalesce': False,
