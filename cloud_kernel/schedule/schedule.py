@@ -6,7 +6,7 @@ from apscheduler.jobstores.sqlalchemy import SQLAlchemyJobStore
 from cloud_kernel.schedule.environment import platform_environment
 from cloud_kernel.schedule.callables import FetchStaticTriggers
 from cloud_kernel.db import CLOUD_KERNEL_ENGINE_STRING
-from cloud_kernel.trigger.trigger_base import CloudKernelTriggerBase
+# from cloud_kernel.trigger.trigger_base import CloudKernelTriggerBase
 from cloud_kernel.schedule.persistant import CloudKafkaConsume
 from cloud_kernel.trigger.trigger_aws import *
 from pytz import utc

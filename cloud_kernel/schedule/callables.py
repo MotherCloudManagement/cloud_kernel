@@ -9,19 +9,8 @@ from cloud_kernel.trigger.trigger_linode import *
 from cloud_kernel.trigger.trigger_gcp import *
 from cloud_kernel.trigger.trigger_digitalocean import *
 from cloud_kernel.trigger.trigger_azure import *
-from cloud_kernel.schedule.persistant import CloudKafkaProduce
+# from cloud_kernel.schedule.persistant import CloudKafkaProduce
 from collections.abc import Mapping
-# from cloud_kernel.trigger import trigger_aws
-# from cloud_kernel.trigger import trigger_azure
-# from cloud_kernel.trigger import trigger_digitalocean
-# from cloud_kernel.trigger import trigger_gcp
-# from cloud_kernel.trigger import trigger_linode
-# from cloud_kernel.trigger import trigger_OpenStack
-# from cloud_kernel.trigger import trigger_rackspace
-# from cloud_kernel.trigger import trigger_softlayer
-# from cloud_kernel.trigger import trigger_vsphere
-# from cloud_kernel.trigger import trigger_vultr
-# from cloud_kernel.trigger import trigger_xenserver
 import ast
 import sys
 import json
@@ -51,7 +40,9 @@ class FetchStaticTriggers(object):
             for x, y in global_triggers.items():
                 if not inspect.isclass(y):
                     continue
-
+                # TODO continue looking into the __subclasscheck__ to filter these out cleaner
+                if x in ['CloudKernelTriggerBase', 'Mapping', 'FetchStaticTriggers', 'FetchProducedJobs']:
+                    continue
                 ImmutableClasses.append(y)
         except Exception as e:
             pass
