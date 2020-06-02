@@ -6,9 +6,11 @@ from apscheduler.jobstores.sqlalchemy import SQLAlchemyJobStore
 from cloud_kernel.schedule.environment import platform_environment
 from cloud_kernel.schedule.callables import FetchStaticTriggers
 from cloud_kernel.db import CLOUD_KERNEL_ENGINE_STRING
+from cloud_kernel.trigger.trigger_base import CloudKernelTriggerBase
 from cloud_kernel.schedule.persistant import CloudKafkaConsume
 from cloud_kernel.trigger.trigger_aws import *
 from pytz import utc
+import types
 
 
 class CloudKernelSingleton(object):
@@ -88,7 +90,7 @@ class CloudKernelSchedule(CloudKernelSingleton):
         #     EVENT_ALL
         # )
 
-    def ImmutableJobs(self, interval_value=1, interval_multiplier=.1):
+    def ImmutableJobs(self, preserve_context=True, interval_value=1, interval_multiplier=.1):
         """
         Fetch an immutables list of callables and add them to the scheduler as
         Jobs.  Each pass through in the loop will use the interval and multiplier
@@ -102,7 +104,6 @@ class CloudKernelSchedule(CloudKernelSingleton):
         print("Queing Immutable Jobs in the cloud_kernel Scheduler...")
 
         for job in ImmutableJobList:
-            # print("Current Interval Value: {}".format((interval + multiplier/2)))
             self.ck_scheduler.add_job(
                 job,
                 'interval',
