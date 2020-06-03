@@ -17,7 +17,7 @@ class GetData(metaclass=CloudKernelTriggerBase):
     def updatedatastore(self):
         db = DatabaseSession(CLOUD_KERNEL_ENGINE_STRING)
 
-        return db.schema, db.metadata, db.engine, db.sess
+        return db.sess.execute('SELECT * FROM aws_data').fetchall()
 
 
 class GetHosts(metaclass=CloudKernelTriggerBase):

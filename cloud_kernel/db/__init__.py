@@ -187,12 +187,11 @@ class DatabaseSession(object):
                 engine
             ))
 
-        self.engine = create_engine(CLOUD_KERNEL_ENGINE_STRING)
-        self.globalsession = session or sessionmaker(
-            autoflush=False, expire_on_commit=False
+        self.engine = create_engine(engine)
+        self.globalsession = sessionmaker(
+            autoflush=False, expire_on_commit=False, bind=self.engine
         )
-        self.globalsession.configure(bind=self.metadata)
-        self.sess = Session(self.globalsession)
+        self.sess = self.globalsession()
 
         self._cache = {}
         self.schema = None
