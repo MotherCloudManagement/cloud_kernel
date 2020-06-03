@@ -1,5 +1,6 @@
 from cloud_kernel.db.db_core import *
 from cloud_kernel.trigger.trigger_base import CloudKernelTriggerBase
+from cloud_kernel.db import DatabaseSession, CLOUD_KERNEL_ENGINE_STRING
 
 
 class GetData(metaclass=CloudKernelTriggerBase):
@@ -8,15 +9,15 @@ class GetData(metaclass=CloudKernelTriggerBase):
     def __init__(self):
         self.name = 'aws_data.1'
         print(self.name)
+        print(self.updatedatastore())
 
     def __iskerneltrigger__(cls, name, bases):
         return cls.__name__
 
-    def UpdateDataStores(self):
-        '''
-        Save to Database
-        '''
-        pass
+    def updatedatastore(self):
+        db = DatabaseSession(CLOUD_KERNEL_ENGINE_STRING)
+
+        return db.schema, db.metadata, db.engine, db.sess
 
 
 class GetHosts(metaclass=CloudKernelTriggerBase):
