@@ -9,7 +9,7 @@ from cloud_kernel.trigger.trigger_linode import *
 from cloud_kernel.trigger.trigger_gcp import *
 from cloud_kernel.trigger.trigger_digitalocean import *
 from cloud_kernel.trigger.trigger_azure import *
-# from cloud_kernel.schedule.persistant import CloudKafkaProduce
+from cloud_kernel.schedule.persistant import CloudKafkaProduce
 from collections.abc import Mapping
 import ast
 import sys

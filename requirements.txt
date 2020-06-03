@@ -1,3 +1,4 @@
 apscheduler
 kafka-python
 kazoo
+sqlalchemy

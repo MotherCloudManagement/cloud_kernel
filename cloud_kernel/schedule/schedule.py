@@ -10,7 +10,6 @@ from cloud_kernel.db import CLOUD_KERNEL_ENGINE_STRING
 from cloud_kernel.schedule.persistant import CloudKafkaConsume
 from cloud_kernel.trigger.trigger_aws import *
 from pytz import utc
-import types
 
 
 class CloudKernelSingleton(object):
