@@ -41,7 +41,12 @@ class FetchStaticTriggers(object):
                 if not inspect.isclass(y):
                     continue
                 # TODO continue looking into the __subclasscheck__ to filter these out cleaner
-                if x in ['CloudKernelTriggerBase', 'Mapping', 'FetchStaticTriggers', 'FetchProducedJobs']:
+                if x in ['CloudKernelTriggerBase',
+                         'Mapping',
+                         'FetchStaticTriggers',
+                         'FetchProducedJobs',
+                         'CloudKafkaProduce'
+                         ]:
                     continue
                 ImmutableClasses.append(y)
         except Exception as e:
